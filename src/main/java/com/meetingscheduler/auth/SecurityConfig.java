@@ -1,3 +1,4 @@
+
 package com.meetingscheduler.auth;
 
 import lombok.RequiredArgsConstructor;
@@ -34,14 +35,13 @@ public class SecurityConfig {
 
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
-                    "/",
-                    "/index.html",
                     "/login.html",
                     "/register.html",
                     "/style.css",
                     "/app.js",
                     "/api/auth/**",
-                    "/error"
+                    "/error",
+                    "/favicon.ico"
                 ).permitAll()
                 .anyRequest().authenticated()
             )
@@ -49,7 +49,7 @@ public class SecurityConfig {
             .formLogin(form -> form
                 .loginPage("/login.html")
                 .loginProcessingUrl("/login")
-                .defaultSuccessUrl("/index.html", true)
+                .defaultSuccessUrl("/", true)
                 .failureUrl("/login.html?error=true")
                 .permitAll()
             )
