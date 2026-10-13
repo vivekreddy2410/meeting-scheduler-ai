@@ -1,3 +1,4 @@
+
 package com.meetingscheduler.service;
 
 import com.meetingscheduler.dto.SlotSuggestion;
@@ -23,104 +24,101 @@ public class SchedulerService {
             String period,
             List<Long> userIds) {
 
+        if (date == null) {
+            throw new IllegalArgumentException("Meeting date is required.");
+        }
+
+        if (duration < 5 || duration > 480) {
+            throw new IllegalArgumentException(
+                    "Meeting duration must be between 5 and 480 minutes."
+            );
+        }
+
         if (userIds == null || userIds.isEmpty()) {
-            userIds = availabilityRepository.findAll()
-                    .stream()
-                    .map(a -> a.getUser().getId())
-                    .distinct()
-                    .toList();
+            throw new IllegalArgumentException(
+                    "Select an organizer and at least one participant."
+            );
+        }
+
+        // Remove duplicate IDs but keep the requested participants only.
+        List<Long> selectedIds = userIds.stream()
+                .filter(id -> id != null)
+                .distinct()
+                .toList();
+
+        if (selectedIds.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Select valid participant IDs."
+            );
         }
 
         List<List<Availability>> calendars = new ArrayList<>();
 
-        for (Long userId : userIds) {
+        for (Long userId : selectedIds) {
             calendars.add(
                     availabilityRepository
                             .findByUserIdAndAvailableDate(userId, date)
             );
         }
 
-        List<SlotSuggestion> result = new ArrayList<>();
-
-        if (calendars.isEmpty()) {
-            return result;
+        // Every selected participant must have availability for this date.
+        if (calendars.stream().anyMatch(List::isEmpty)) {
+            return List.of();
         }
 
         LocalTime windowStart;
-
-        switch (period) {
-            case "morning":
-                windowStart = LocalTime.of(9, 0);
-                break;
-
-            case "afternoon":
-                windowStart = LocalTime.of(13, 0);
-                break;
-
-            case "evening":
-                windowStart = LocalTime.of(17, 0);
-                break;
-
-            default:
-                windowStart = LocalTime.of(9, 0);
-        }
-
         LocalTime windowEnd;
 
-        switch (period) {
-            case "morning":
-                windowEnd = LocalTime.of(12, 0);
-                break;
+        String requestedPeriod = period == null
+                ? "any"
+                : period.trim().toLowerCase();
 
-            case "afternoon":
+        switch (requestedPeriod) {
+            case "morning" -> {
+                windowStart = LocalTime.of(9, 0);
+                windowEnd = LocalTime.NOON;
+            }
+            case "afternoon" -> {
+                windowStart = LocalTime.NOON;
                 windowEnd = LocalTime.of(17, 0);
-                break;
-
-            case "evening":
+            }
+            case "evening" -> {
+                windowStart = LocalTime.of(17, 0);
                 windowEnd = LocalTime.of(20, 0);
-                break;
-
-            default:
-                windowEnd = LocalTime.of(20, 0);
+            }
+            default -> {
+                windowStart = LocalTime.of(9, 0);
+                windowEnd = LocalTime.of(18, 0);
+            }
         }
 
-        for (
-                LocalTime currentStart = windowStart;
-                !currentStart.plusMinutes(duration).isAfter(windowEnd);
-                currentStart = currentStart.plusMinutes(30)
-        ) {
+        
+        List<SlotSuggestion> result = new ArrayList<>();
 
-            final LocalTime slotStart = currentStart;
-            final LocalTime slotEnd = currentStart.plusMinutes(duration);
+        for (LocalTime start = windowStart;
+             !start.plusMinutes(duration).isAfter(windowEnd);
+             start = start.plusMinutes(30)) {
 
-            boolean everyoneAvailable = true;
+            final LocalTime slotStart = start;
+            final LocalTime slotEnd = slotStart.plusMinutes(duration);
 
-            for (List<Availability> calendar : calendars) {
-
-                boolean available = calendar.stream().anyMatch(a ->
-                        !slotStart.isBefore(a.getStartTime())
-                                && !slotEnd.isAfter(a.getEndTime())
-                );
-
-                if (!available) {
-                    everyoneAvailable = false;
-                    break;
-                }
-            }
+            boolean everyoneAvailable = calendars.stream().allMatch(calendar ->
+                    calendar.stream().anyMatch(a ->
+                            !slotStart.isBefore(a.getStartTime())
+                                    && !slotEnd.isAfter(a.getEndTime())
+                    )
+            );
 
             if (everyoneAvailable) {
-
-                result.add(
-                        new SlotSuggestion(
-                                date,
-                                slotStart,
-                                slotEnd,
-                                "All requested participants are available in this time window."
-                        )
-                );
+                result.add(new SlotSuggestion(
+                        date,
+                        slotStart,
+                        slotEnd,
+                        "All selected participants have availability covering this slot."
+                ));
             }
 
-            if (result.size() == 5) {
+            if (result.size() >= 5) {
                 break;
             }
         }
@@ -128,3 +126,4 @@ public class SchedulerService {
         return result;
     }
 }
+

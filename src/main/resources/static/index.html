@@ -1,64 +1,249 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meeting Scheduler AI</title>
+    <meta name="theme-color" content="#0a1020">
+    <title>MeetingAI | Smart Scheduler</title>
     <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-<header>
-    <div class="brand">⏱ Meeting<span>AI</span></div>
-    <nav>
-        <a href="#dashboard">Dashboard</a>
-        <a href="#schedule">AI Scheduler</a>
-        <a href="#meetings">Meetings</a>
-        <a href="#users">Users</a>
-    </nav>
-</header>
+<div class="app-shell">
+    <aside class="sidebar">
+        <a class="brand" href="#dashboard">
+            <span class="brand-icon">◷</span>
+            <span>Meeting<span class="accent">AI</span></span>
+        </a>
 
-<main>
-<section class="hero" id="dashboard">
-    <div>
-        <p class="eyebrow">AUTONOMOUS COORDINATION AGENT</p>
-        <h1>Schedule meetings<br><span>without the back-and-forth.</span></h1>
-        <p class="hero-text">Describe your meeting in natural language. MeetingAI interprets the request, checks availability and suggests common time slots.</p>
-        <a class="primary-btn" href="#schedule">Try AI Scheduler →</a>
-    </div>
-    <div class="hero-card">
-        <div class="ai-dot"></div>
-        <p class="muted">AI AGENT</p>
-        <h3>Ready to coordinate</h3>
-        <p>Calendar analysis • Conflict detection • Time-slot suggestions</p>
-    </div>
-</section>
+        <p class="nav-label">WORKSPACE</p>
+        <nav class="side-nav">
+            <a class="nav-link active" href="#dashboard">▦ <span>Dashboard</span></a>
+            <a class="nav-link" href="#schedule">✦ <span>AI Scheduler</span></a>
+            <a class="nav-link" href="#meetings">▤ <span>Meetings</span></a>
+            <a class="nav-link" href="#users">♙ <span>Team members</span></a>
+            <a class="nav-link" href="#availability">◷ <span>Availability</span></a>
+        </nav>
 
-<section class="panel" id="schedule">
-    <div class="section-title">
-        <div><p class="eyebrow">NATURAL LANGUAGE</p><h2>Ask the scheduling agent</h2></div>
-    </div>
-    <textarea id="aiRequest" placeholder='Example: Schedule a 30-minute project sync with the team tomorrow afternoon'></textarea>
-    <div class="row">
-        <select id="organizer">
-            <option value="">Choose organizer</option>
-        </select>
-        <button class="primary-btn" onclick="findSlots()">Find available slots</button>
-    </div>
-    <div id="aiResult"></div>
-</section>
+        <div class="sidebar-bottom">
+            <div class="agent-status">
+                <span class="status-dot"></span>
+                <div>
+                    <strong>AI Agent</strong>
+                    <small>Ready to coordinate</small>
+                </div>
+            </div>
+            <form action="/logout" method="post">
+                <button class="logout-btn" type="submit">↪ Sign out</button>
+            </form>
+        </div>
+    </aside>
 
-<section class="panel" id="meetings">
-    <div class="section-title"><div><p class="eyebrow">CALENDAR</p><h2>Meetings</h2></div></div>
-    <div id="meetingList" class="cards"></div>
-</section>
+    <main class="main-content" id="dashboard">
+        <header class="topbar">
+            <div>
+                <p class="eyebrow">YOUR WORKSPACE</p>
+                <h1>Dashboard <span class="wave">✦</span></h1>
+                <p class="muted">Plan smarter. Meet better. Get time back.</p>
+            </div>
+            <a class="primary-btn" href="#schedule">＋ New meeting</a>
+        </header>
 
-<section class="panel" id="users">
-    <div class="section-title"><div><p class="eyebrow">TEAM</p><h2>Participants</h2></div></div>
-    <div id="userList" class="cards"></div>
-</section>
-</main>
+        <section class="welcome-banner">
+            <div>
+                <p class="eyebrow">SMART MEETING COORDINATION</p>
+                <h2>Less scheduling. More doing.</h2>
+                <p>Describe your meeting and let MeetingAI find suitable time slots.</p>
+                <a class="banner-btn" href="#schedule">Try AI Scheduler →</a>
+            </div>
+            <div class="banner-art" aria-hidden="true">
+                <div class="orbit orbit-one"></div>
+                <div class="orbit orbit-two"></div>
+                <div class="orbit-core">✦</div>
+                <span class="float-icon float-one">✓</span>
+                <span class="float-icon float-two">◷</span>
+            </div>
+        </section>
 
-<footer>MeetingAI • Spring Boot + MySQL + AI/NLP Scheduler</footer>
+        <section class="stats-grid" aria-label="Meeting statistics">
+            <article class="stat-card">
+                <div class="stat-icon purple">▤</div>
+                <p>Total meetings</p>
+                <h3 id="totalMeetings">—</h3>
+                <small>All recorded meetings</small>
+            </article>
+            <article class="stat-card">
+                <div class="stat-icon green">✓</div>
+                <p>Scheduled</p>
+                <h3 id="scheduledMeetings">—</h3>
+                <small>Currently scheduled</small>
+            </article>
+            <article class="stat-card">
+                <div class="stat-icon blue">◷</div>
+                <p>Upcoming</p>
+                <h3 id="upcomingMeetings">—</h3>
+                <small>Scheduled for today or later</small>
+            </article>
+            <article class="stat-card">
+                <div class="stat-icon orange">♙</div>
+                <p>Team members</p>
+                <h3 id="totalUsers">—</h3>
+                <small>Registered accounts</small>
+            </article>
+        </section>
+
+        <!-- AI SCHEDULER -->
+        <section class="panel" id="schedule">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">NATURAL LANGUAGE</p>
+                    <h2>AI scheduling assistant</h2>
+                    <p class="muted">Tell the agent what you want to arrange.</p>
+                </div>
+                <span class="pill">✦ AI POWERED</span>
+            </div>
+
+            <label class="field-label" for="aiRequest">Your meeting request</label>
+            <textarea id="aiRequest"
+                placeholder="Example: Schedule a 30-minute project sync with the team tomorrow afternoon"></textarea>
+
+            <div class="form-row">
+                <div class="field-grow">
+                    <label class="field-label" for="organizer">Meeting organizer</label>
+                    <select id="organizer">
+                        <option value="">Choose organizer</option>
+                    </select>
+                </div>
+                <button class="primary-btn" id="findSlotsBtn"
+                        type="button" onclick="findSlots()">
+                    ✦ Find available slots
+                </button>
+            </div>
+            <div id="aiResult" aria-live="polite"></div>
+        </section>
+
+        <!-- MEETINGS -->
+        <section class="panel" id="meetings">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">YOUR CALENDAR</p>
+                    <h2>Meetings</h2>
+                    <p class="muted">Review and manage your scheduled meetings.</p>
+                </div>
+                <button class="secondary-btn" type="button"
+                        onclick="loadMeetings()">↻ Refresh</button>
+            </div>
+            <div id="meetingMessage" class="message" aria-live="polite"></div>
+            <div id="meetingList" class="cards"></div>
+        </section>
+
+        
+    
+        <!-- TEAM MEMBERS -->
+        <section class="panel" id="users">
+             <div class="section-heading">
+                 <div>
+                     <p class="eyebrow">COLLABORATION</p>
+                     <h2>Your team</h2>
+                    <p class="muted">People available in your workspace.</p>
+                 </div>
+
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button
+                         class="secondary-btn"
+                         id="toggleParticipantsBtn"
+                         type="button"
+                         onclick="toggleParticipants()">
+                        Show Participants
+                    </button>
+
+                    <button
+                         class="secondary-btn"
+                         type="button"
+                         onclick="loadUsers()">
+                         ↻ Refresh
+                    </button>
+                </div>
+            </div>
+
+            <div id="userMessage" class="message" aria-live="polite"></div>
+
+            <div id="userList" class="cards" hidden></div>
+        </section>
+
+
+
+        <!-- AVAILABILITY -->
+        <section class="panel" id="availability">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">YOUR CALENDAR</p>
+                    <h2>My Availability</h2>
+                    <p class="muted">
+                        Add and view available dates and working hours.
+                    </p>
+                </div>
+                <button class="secondary-btn" type="button"
+                        onclick="loadAvailability()">↻ Refresh</button>
+            </div>
+
+            <form id="availabilityForm" class="availability-form"
+                  onsubmit="saveAvailability(event)">
+
+                <div class="form-row">
+                    <div class="field-grow">
+                        <label class="field-label" for="availabilityUser">
+                            Team member
+                        </label>
+                        <select id="availabilityUser" required>
+                            <option value="">Choose team member</option>
+                        </select>
+                    </div>
+
+                    <div class="field-grow">
+                        <label class="field-label" for="availableDate">
+                            Date
+                        </label>
+                        <input type="date" id="availableDate" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="field-grow">
+                        <label class="field-label" for="availabilityStart">
+                            Start time
+                        </label>
+                        <input type="time" id="availabilityStart" required>
+                    </div>
+
+                    <div class="field-grow">
+                        <label class="field-label" for="availabilityEnd">
+                            End time
+                        </label>
+                        <input type="time" id="availabilityEnd" required>
+                    </div>
+
+                    <button class="primary-btn" type="submit">
+                        + Save availability
+                    </button>
+                </div>
+
+                <p id="availabilityMessage" class="message"
+                   aria-live="polite"></p>
+            </form>
+
+            <h3>Saved availability</h3>
+            <div id="availabilityList" class="cards">
+                <p class="muted">Loading availability...</p>
+            </div>
+        </section>
+
+        <footer>
+            MeetingAI <span>•</span> Smart scheduling for focused teams
+        </footer>
+    </main>
+</div>
+
 <script src="/app.js"></script>
 </body>
 </html>
